@@ -1,0 +1,11 @@
+# 部署容器
+
+只要配置的 docker 帐户可以访问，Komodo 就可以部署任何 docker 镜像。
+它的工作原理是将部署配置解析为 `docker run` 命令，然后在目标系统上运行该命令。
+配置存储在 MongoDB 上，所有操作（更新配置、部署、停止等）的记录也都会存储。
+
+```mdx-code-block
+import DocCardList from '@theme/DocCardList';
+
+<DocCardList />
+```

@@ -1,0 +1,34 @@
+# 设置 Komodo 核心
+
+要运行 Komodo，您需要 Docker。请参阅 [docker 安装文档](https://docs.docker.com/engine/install/)。
+
+### 使用 Docker Compose 部署
+
+- [**使用 MongoDB**](./mongo.mdx)
+- [**使用 FerretDB** (Postgres)](./ferretdb.mdx)
+
+:::info
+有些系统[不支持运行最新版本的 MongoDB](https://github.com/moghtech/komodo/issues/59)。
+使用这些系统的用户应改用 FerretDB。
+:::
+
+:::info
+**FerretDB v1** 用户：
+此处提供了 [**FerretDB v2 升级指南**](https://github.com/moghtech/komodo/blob/main/bin/cli/docs/copy-database.md#ferretdb-v2-update-guide)。
+:::
+
+### 首次登录
+
+核心现在应该可以通过指定的端口访问，导航到 `http://<address>:<port>` 将显示登录页面。
+输入您首选的管理员用户名和密码，然后单击 **“注册”**，_而不是_“登录”，为 Komodo 创建您的管理员用户。
+任何其他创建帐户的用户默认将被禁用，并且必须由管理员启用。
+
+### Https
+
+Komodo Core 仅支持 http，因此应使用像 [caddy](https://caddyserver.com/) 这样的反向代理来实现 https。
+
+```mdx-code-block
+import DocCardList from '@theme/DocCardList';
+
+<DocCardList />
+```

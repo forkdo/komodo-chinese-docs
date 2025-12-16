@@ -1,0 +1,27 @@
+# FerretDB
+
+:::info
+- 如果您在 [**Komodo v1.18.0**](https://github.com/moghtech/komodo/releases/tag/v1.18.0) 之前使用 **Postgres** 或 **Sqlite** 选项设置 Komodo，则您使用的是 **FerretDB v1**。
+- Komodo 现在使用 **FerretDB v2**。对于现有用户，[**升级需要迁移**](https://github.com/moghtech/komodo/blob/main/bin/cli/docs/copy-database.md#ferretdb-v2-update-guide)。
+:::
+
+[**FerretDB**](https://www.ferretdb.com) 是一个与 MongoDB 兼容的数据库，由 [Postgres + DocumentDB 扩展](https://github.com/microsoft/documentdb) 提供支持。
+它是一个可靠的选择，性能与 MongoDB 相当，并且也可以在某些[不支持 MongoDB](https://github.com/moghtech/komodo/issues/59) 的系统上运行。
+
+1. 将 `komodo/ferretdb.compose.yaml` 和 `komodo/compose.env` 复制到您的主机：
+```bash
+wget -P komodo https://raw.githubusercontent.com/moghtech/komodo/main/compose/ferretdb.compose.yaml && \
+  wget -P komodo https://raw.githubusercontent.com/moghtech/komodo/main/compose/compose.env
+```
+2. 编辑 `komodo/compose.env` 中的变量。
+3. 使用命令部署：
+
+```bash
+docker compose -p komodo -f komodo/ferretdb.compose.yaml --env-file komodo/compose.env up -d
+```
+
+```mdx-code-block
+import ComposeAndEnv from "@site/src/components/ComposeAndEnv";
+
+<ComposeAndEnv file_name="ferretdb.compose.yaml" />
+```

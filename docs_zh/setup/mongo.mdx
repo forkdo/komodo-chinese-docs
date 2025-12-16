@@ -1,0 +1,22 @@
+# MongoDB
+
+[**MongoDB**](https://www.mongodb.com) 是 Komodo 的标准数据库。
+Komodo Core 使用 MongoDB 驱动程序与数据库通信。
+
+1. 将 `komodo/mongo.compose.yaml` 和 `komodo/compose.env` 复制到您的主机：
+```bash
+wget -P komodo https://raw.githubusercontent.com/moghtech/komodo/main/compose/mongo.compose.yaml && \
+  wget -P komodo https://raw.githubusercontent.com/moghtech/komodo/main/compose/compose.env
+```
+2. 编辑 `komodo/compose.env` 中的变量。
+3. 使用命令部署：
+
+```bash
+docker compose -p komodo -f komodo/mongo.compose.yaml --env-file komodo/compose.env up -d
+```
+
+```mdx-code-block
+import ComposeAndEnv from "@site/src/components/ComposeAndEnv";
+
+<ComposeAndEnv file_name="mongo.compose.yaml" />
+```

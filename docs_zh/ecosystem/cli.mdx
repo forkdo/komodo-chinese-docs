@@ -1,0 +1,121 @@
+# Komodo CLI
+
+Komodo CLI，即 `km`，可用于：
+  - 快速 **运行执行** 并更新 **资源** 和 **变量**。
+  - **重置用户密码** 并将用户提升为 **超级管理员**。
+  - 执行数据库 **备份**、**恢复** 和 **复制**。
+
+Komodo Core 镜像附带 Komodo CLI，
+可在正在运行的容器内使用 `docker exec -it komodo-core km ...`。
+这样，它会继承核心数据库配置，以便使用 `km db backup -y` 轻松执行备份。
+
+### 示例
+
+  - `km --help`
+  - `km deploy stack my-stack`
+  - `km run action my-action -y`
+  - `km database backup`
+  - `km db restore`
+  - `km set var MY_VAR my_value -y`
+  - `km update build my-build "version=1.19.0&branch=release"`
+  - `km x commit my-sync`
+  - `km set user mbecks super-admin true`
+  - `km set user mbecks password "temp-password"`
+
+### 安装
+
+有适用于 **Linux** (x86_64 / aarch64)、**MacOS** (apple silicon) 的二进制文件，
+以及一个 distroless 镜像：**`ghcr.io/moghtech/komodo-cli`**。
+
+#### Linux
+
+您可以使用以下命令安装二进制文件：
+
+系统范围，以 root 身份安装到 `/usr/local/bin/km`：
+```bash
+curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/install-cli.py | python3
+```
+
+或以非 root 用户身份安装到 `${HOME}/.local/bin/km`：
+```bash
+curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/install-cli.py | python3 - --user
+```
+
+#### MacOS (Homebrew)
+
+添加 `moghtech/komodo` tap，然后安装 `km`：
+```bash
+brew tap moghtech/komodo && \
+  brew install km
+```
+
+#### 容器
+
+您可以为 docker run 命令设置别名：
+```bash
+alias km='docker run --rm -v $HOME/.config/komodo:/config ghcr.io/moghtech/komodo-cli km'
+km config
+```
+
+### 配置
+
+CLI 使用配置文件传递 Komodo 主机/api 密钥、数据库地址和凭据，
+并配置一些其他行为。此外，所有配置字段都可以
+使用 **CLI 参数** 或 **环境变量** 单独覆盖，其中 CLI 参数具有最高优先级。
+
+每当您想检查配置将如何加载时，可以使用 `km config` 命令
+将其打印出来。
+
+#### 文件检测
+
+运行时，CLI 将扫描 **当前工作目录** 和 `${HOME}/.config/komodo` 中任何匹配通配符模式 **`*komodo.cli*.*`** 的文件，
+将它们解析为通用表示，然后将它们合并在一起。稍后检测到的文件会稍后合并，
+这意味着它们将在冲突字段上覆盖。默认情况下，`${HOME}/.config/komodo` 中的文件首先
+在合并顺序中，这意味着它们的 **优先级低于** 在当前工作目录中检测到的文件。
+您还可以通过传递 `km -c /path/to/1/base.config.yaml -c ./overrides ...` 来覆盖这些默认路径。
+
+如果您希望 `km` 在另一个目录中查找配置文件，
+可以在其中一个已配置的目录中创建一个 `.kminclude` 文件。
+
+```
+# 支持注释
+
+./.komodo    # 相对于包含 `.kminclude` 的目录
+
+/etc/komodo/komodo.cli.toml  # 也支持绝对路径
+```
+
+请注意，这些路径中的通配符 **不支持**。
+
+#### 配置文件
+
+在文件中，您可以配置多个配置文件，每个文件都有一个名称/别名。然后您
+可以使用 `km -p <profile> ...` 选择要使用的配置配置文件。这使您可以轻松地在
+要连接的多个核心或不同的数据库备份/恢复选项之间切换。
+
+为了避免每次都传递 `-p <profile>`，您可以在
+配置文件的顶层设置一个 `default_profile`。此外，
+您希望在所有配置文件中成为“默认”的任何字段都可以
+在文件的顶层设置。
+
+#### 示例文件
+
+配置也可以作为 **YAML** 或 **JSON** 传递。
+您可以使用 it-tools 将此 TOML 文件转换为您喜欢的格式：
+  - YAML：https://it-tools.tech/toml-to-yaml
+  - JSON：https://it-tools.tech/toml-to-json
+
+快速下载到 `./komodo/komodo.cli.toml`：
+```bash
+wget -P komodo https://raw.githubusercontent.com/moghtech/komodo/main/config/komodo.cli.toml
+```
+
+```mdx-code-block
+import RemoteCodeFile from "@site/src/components/RemoteCodeFile";
+
+<RemoteCodeFile
+	title="https://github.com/moghtech/komodo/blob/main/config/komodo.cli.toml"
+	url="https://raw.githubusercontent.com/moghtech/komodo/main/config/komodo.cli.toml"
+	language="toml"
+/>
+```
