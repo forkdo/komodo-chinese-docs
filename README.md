@@ -32,6 +32,7 @@ git push origin docs
 git remote add upstream https://github.com/moghtech/komodo.git
 git fetch upstream main
 git checkout upstream/main -- docsite
+git checkout upstream/main -- docsite/docs
 ```
 
 5. 更新配置信息

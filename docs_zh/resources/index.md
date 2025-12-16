@@ -10,18 +10,18 @@ Komodo 可通过 **资源** 抽象进行扩展。像 `Server`、`Deployment` 和
 所有依赖于 git 仓库/docker 注册中心的资源都能够使用这些凭据访问私有仓库。
 :::
 
-## [服务器](setup/connect-servers)
+## [服务器](../setup/connect-servers.mdx)
 
 - 配置与外围代理的连接。
 - 设置警报阈值。
 - 可由 **部署**、**堆栈**、**仓库** 和 **构建器** 附加。
 
-## [部署](resources/deploy-containers/index.mdx)
+## [部署](./deploy-containers/index.mdx)
 
 - 在附加的服务器上部署 docker 容器。
 - 在容器级别管理服务，使用 **过程** 和 **资源同步** 执行编排。
 
-## [堆栈](resources/docker-compose)
+## [堆栈](./docker-compose.md)
 
 - 使用 docker compose 部署。
 - 在 UI 中提供 compose 文件，或将文件移动到 git 仓库并使用 webhook 在推送时自动重新部署。
@@ -33,29 +33,29 @@ Komodo 可通过 **资源** 抽象进行扩展。像 `Server`、`Deployment` 和
 - 将脚本放入 git 仓库，并在服务器上或使用构建器运行它们。
 - 可以构建二进制文件、执行自动化，基本上您可以想到的任何事情。
 
-## [构建](resources-build-images/index.mdx)
+## [构建](./build-images/index.mdx)
 
 - 将应用程序源代码构建到 docker 映像中，并将其推送到配置的注册表。
 - 源代码可以是任何包含 Dockerfile 的 git 仓库。
 
-## [构建器](resources/build-images/builders)
+## [构建器](./build-images/builders.md)
 
 - 指向连接的服务器，或保存用于启动一次性 AWS 实例以构建映像的配置。
 - 可附加到 **构建** 和 **仓库**。
 
-## [过程](resources/procedures#procedures)
+## [过程](./procedures.md#procedures)
 
 - 在其他资源类型上组合许多操作，例如 `RunBuild` 或 `DeployStack`，并通过按钮按下（或使用 webhook）运行它。
 - 可以在并行的“阶段”中运行一个或多个操作，并组合一系列并行阶段以顺序运行。
 
-## [操作](resources/procedures#actions)
+## [操作](./procedures.md#actions)
 
 - 在 Typescript 中编写调用 Komodo API 的脚本
 - 在脚本中使用预初始化的 Komodo 客户端，无需 api 密钥。
 - UI 编辑器中的类型感知。在您键入时获取建议并查看深度文档。
 - Typescript 客户端也[发布在 NPM 上](https://www.npmjs.com/package/komodo_client)。
 
-## [资源同步](resources/sync-resources)
+## [资源同步](./sync-resources.md)
 
 - 通过在 `toml` 文件中声明性地定义所有配置来编排所有配置，这些文件被检入 git 仓库。
 - 如果建议更改，可以部署 **部署** 和 **堆栈**。
