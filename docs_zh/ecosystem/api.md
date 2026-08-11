@@ -6,7 +6,7 @@ Komodo Core 公开了一个类似 RPC 的 HTTP API，用于读取数据、写入
 
 完整的 API 文档可在[**此处**](https://docs.rs/komodo_client/latest/komodo_client/api/index.html)获取。
 
-## Rust 客户端
+## Rust 客户端 {#rust-client}
 
 Rust 客户端发布在 crates.io 上，名为 [komodo_client](https://crates.io/crates/komodo_client)。
 
@@ -25,7 +25,7 @@ let update = komodo
   .await?;
 ```
 
-## Typescript 客户端
+## Typescript 客户端 {#typescript-client}
 
 Typescript 客户端发布在 NPM 上，名为 [komodo_client](https://www.npmjs.com/package/komodo_client)。
 

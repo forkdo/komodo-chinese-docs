@@ -5,7 +5,7 @@ on:
     branches:
       - docs
     paths:
-      - 'docsite/**'
+      - 'docs/**'
       - 'docs_zh/**'
       - '.github/workflows/docs.yml'
 
@@ -16,23 +16,78 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  deploy:
+  build:
+    env:
+      TZ: Asia/Shanghai
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Fetch Source
+        run: |
+          git clone https://github.com/moghtech/komodo.git docsite
+          cd docsite
+          git checkout $(cat ../commit.txt)
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Verify installations
+        run: |
+          echo "Node.js: $(node --version)"
+          echo "Yarn: $(yarn --version)"
+      - name: Build Docs
+        run: |
+          cp -r docs_zh/* ./docsite/docsite/docs/
+          cd docsite/docsite/
+          yarn install
+          yarn build
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: docs-site
+          path: docsite/docsite/build
+          retention-days: 1
+
+  deploy-github-pages:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/configure-pages@v5
-      - uses: actions/checkout@v6
-      - name: Build Docs
-        run: |
-          cp -r docs_zh/* docsite/docs/
-          cd docsite
-          yarn
-          yarn build
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: docs-site
+          path: ./build
+      - name: Deploy to Branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build
+          cname: ${{ vars.PAGES_DOMAIN }}
 
-      ### SSH Server WEB
+  deploy-ssh-server:
+    needs: build
+    runs-on: ubuntu-latest
+    # 是否启用 SSH 服务器部署，默认不启用。
+    # 在仓库 Settings → Secrets and variables → Actions → Variables 中
+    # 添加变量 ENABLE_SSH_DEPLOY=true 即可开启。
+    if: ${{ vars.ENABLE_SSH_DEPLOY == 'true' }}
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: docs-site
+          path: ./build
       - name: Set up SSH
         uses: LuisEnMarroquin/setup-ssh-action@v3.0.0
         with:
@@ -43,22 +98,8 @@ jobs:
           USER: ${{ secrets.SSH_USERNAME }}
       - run: echo "" >> ~/.ssh/access  # fix
       - name: Deploy the website
-        env: 
+        env:
           WEBROOT: /data/wwwroot/komodo
         run: |
           ssh webserver "rm -rf $WEBROOT && mkdir -p $WEBROOT"
-          scp -r docsite/build/* webserver:${WEBROOT}
-
-      ### GitHub Pages
-      - run: cp CNAME docsite/build/
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: docsite/build
-      - uses: actions/deploy-pages@v4
-        id: deployment
-
-      - name: Deploy to Branch
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docsite/build
+          scp -r build/* webserver:${WEBROOT}

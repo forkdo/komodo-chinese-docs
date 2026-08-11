@@ -4,36 +4,74 @@
 import RemoteCodeFile from "@site/src/components/RemoteCodeFile";
 ```
 
-将服务器连接到 Komodo 有 2 个步骤：
+您想要用 Komodo 管理的每台服务器都需要安装 **Periphery** 代理。
+Periphery 是一个小型的无状态二进制文件，通过双向 websocket 连接接收来自 Komodo Core 的命令。
 
-1.  在服务器上安装外围代理（二进制文件或容器）。
-2.  通过核心 API / UI 将服务器添加到 Komodo。
+连接一台服务器有 3 个步骤：
+
+1.  通过 Komodo Core API / UI **创建接入密钥（onboarding key）**。
+2.  **安装 Periphery 代理**到服务器或虚拟机上，并传入接入密钥。
+3.  确认连接状态为 **OK**。
 
 ## 安装外围
 
-您可以将 Periphery 安装为 systemd 管理的进程，将其作为 [docker 容器](https://github.com/moghtech/komodo/pkgs/container/komodo-periphery) 运行，或者您可以使用二进制文件做任何您想做的事情。
+您可以将 Periphery 安装为 systemd 管理的进程，将其作为 [docker 容器](https://github.com/moghtech/komodo/pkgs/container/komodo-periphery) 运行，或者直接通过其他进程管理器运行二进制文件。
 
-:::warning
-允许意外访问 Periphery 代理 API 存在安全风险。
-确保采取适当措施阻止对 Periphery API 的访问，例如端口 `8120` 上的防火墙规则。
-此外，您可以在 [Periphery 配置](https://github.com/moghtech/komodo/blob/main/config/periphery.config.toml#L46) 中将您的 Komodo Core IP 地址列入白名单，
-并将其配置为 [仅接受包含您的核心密码的请求](https://github.com/moghtech/komodo/blob/main/config/periphery.config.toml#L51)。
+### Systemd
+
+:::info
+这是运行 Periphery 的推荐且最简单的方法。
+它避免了在容器中运行 Periphery 时可能出现的若干复杂问题。
+[参见此讨论](https://github.com/moghtech/komodo/discussions/220)。
 :::
 
-### 安装外围代理 - systemd
-
-以 root 用户身份：
-```bash
-curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py | python3
-```
-
-Periphery 也可以安装为作为调用用户运行，请注意这会带来一些额外的配置。
+#### Root 安装
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py | python3 - --user
+curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py \
+  | python3 - \
+  --core-address="https://<core-address>" \
+  --connect-as="$(hostname)" \
+  --onboarding-key="O-..."
 ```
 
-您可以在 [readme](https://github.com/moghtech/komodo/tree/main/scripts) 中找到更多信息（并查看脚本）。
+#### User 安装
+
+Periphery 也可以安装为运行**系统用户服务**（systemd user service，针对调用用户）。
+
+```bash
+curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-periphery.py \
+  | python3 - --user \
+  --core-address="https://<core-address>" \
+  --connect-as="$(hostname)" \
+  --onboarding-key="O-..."
+```
+
+#### 启用 Periphery 服务在重启后自动启动。
+
+```bash
+sudo systemctl enable periphery
+```
+
+:::warning Important
+**对于 systemctl 用户安装**：为确保 periphery 在您的用户注销后保持运行，请务必启用 linger：
+
+```bash
+sudo loginctl enable-linger $USER
+```
+
+:::
+
+#### 配置文件
+
+配置文件位置取决于 root 安装还是用户安装：
+
+- Root 安装：`/etc/komodo/periphery.config.toml`
+- User 安装：`$HOME/.config/komodo/periphery.config.toml`
+
+[完整示例配置文件在此](#配置)。
+
+您可以在 [script readme](https://github.com/moghtech/komodo/tree/main/scripts) 中找到更多信息（并查看脚本）。
 
 :::info
 此脚本可以多次运行而不会出现问题，并且在第一次运行后不会更改现有配置。在 Komodo 版本发布后再次运行它，它将更新外围版本。
@@ -44,7 +82,7 @@ curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-p
 此类设置的示例可以在此处找到：https://github.com/bpbradley/ansible-role-komodo
 :::
 
-### 安装外围代理 - 容器
+### 容器
 
 您可以使用 docker compose 文件：
 
@@ -56,7 +94,7 @@ curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-p
 />
 ```
 
-### 手动安装步骤 - 二进制文件
+### 二进制文件
 
 1.  从最新的[发行版](https://github.com/moghtech/komodo/releases)下载外围二进制文件。
 
@@ -66,7 +104,10 @@ curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-p
 有关配置外围的更多信息，请参阅[外围配置文档](https://docs.rs/komodo_client/latest/komodo_client/entities/config/periphery/index.html)。
 :::
 
-3.  确保 periphery.config.toml 中指定的端口（默认 8120）允许入站连接。
+3.  确保通过所选的连接方式可以与 Komodo Core 通信。**因此需要满足以下之一**：
+
+        - Periphery 能够在配置的 `core_address` 处访问 Komodo Core。
+        - Komodo Core 能够在指定端口（默认 `8120`）访问 Periphery。
 
 4.  安装 docker。请参阅[docker 安装文档](https://docs.docker.com/engine/install/)。
 
@@ -78,13 +119,8 @@ curl -sSL https://raw.githubusercontent.com/moghtech/komodo/main/scripts/setup-p
 
 ### 外围启动命令示例
 
-```
-periphery \
-	--config-path /path/to/periphery.config.base.toml \
-	--config-path /other_path/to/override-periphery-config-directory \
-	--config-keyword periphery \
-	--config-keyword config \
-	--merge-nested-config true
+```sh
+periphery --config-path /path/to/periphery.config.toml
 ```
 
 :::info
@@ -92,8 +128,76 @@ periphery \
 :::
 
 在 docker 中运行 periphery 时，使用 [command](https://docs.docker.com/reference/compose-file/services/#command) 传递额外的参数。
+
 ```
 command: periphery --config-path /path/in/container/to/periphery.config.base.toml
+```
+
+## 认证与密钥轮换
+
+Core 和 Periphery 使用自动生成的公钥/私钥对进行认证。无需手动管理密钥。
+
+### 工作原理
+
+1.  当您在 UI 或 API 中创建**接入密钥**时，Komodo Core 会生成一对密钥，私钥作为“接入密钥”一次性返回给用户。
+2.  当 Periphery 首次使用接入密钥连接时，它会生成自己的密钥对，并仅将公钥发送给 Core。Core 会为每个服务器存储该公钥。
+3.  所有后续通信都通过执行
+   [加密握手](https://noiseprotocol.org/noise.html#interactive-handshake-patterns-fundamental)
+   并进行验证，确认传输的公钥匹配来完成认证。
+
+初始连接后不再需要接入密钥，并且 Periphery 私钥永远不会离开服务器。
+
+### 默认密钥位置
+
+| 组件 | 安装方式 | 默认路径 |
+| --------- | -------------- | -------------------------------------- |
+| Core | 容器 | `/config/keys/core.key` |
+| Periphery | 容器 | `/config/keys/periphery.key` |
+| Periphery | Systemd | `${root_directory}/keys/periphery.key` |
+
+密钥也可以在配置中以内联方式指定，而不是作为文件路径。
+
+### 自动密钥轮换
+
+Komodo 支持自动轮换 Periphery 密钥对。
+触发后，已连接的 Periphery 代理会生成新的密钥对，并将公钥发送给 Komodo Core，Core 会更新该服务器期望的公钥。
+
+每个服务器都有一个 `auto_rotate_keys` 设置（默认值：`true`），用于控制其是否参与批量 `RotateAllServerKeys` 操作。
+您也可以随时通过 API 或 UI 为单个服务器轮换密钥。
+
+### 接入密钥选项
+
+接入密钥可重复使用，并支持以下选项：
+
+| 选项 | 描述 |
+| ---------------- | ----------------------------------------------------------- |
+| `enabled` | 启用或禁用该密钥。 |
+| `expires` | 过期时间戳（0 = 永不过期）。 |
+| `tags` | 使用此密钥创建的服务器所应用的默认标签。 |
+| `copy_server` | 用于复制配置的模板服务器。 |
+| `create_builder` | 为新服务器自动创建 Builder 资源。 |
+| `privileged` | 允许该密钥更新现有服务器上的公钥。 |
+
+## 配置
+
+配置也可以作为 **YAML** 或 **JSON** 传递。
+您可以使用 it-tools 将此 TOML 文件转换为您喜欢的格式：
+
+- YAML: [it-tools.tech/toml-to-yaml](https://it-tools.tech/toml-to-yaml)
+- JSON: [it-tools.tech/toml-to-json](https://it-tools.tech/toml-to-json)
+
+快速下载到 `./komodo/periphery.config.toml`：
+
+```bash
+wget -P komodo https://raw.githubusercontent.com/moghtech/komodo/main/config/periphery.config.toml
+```
+
+```mdx-code-block
+<RemoteCodeFile
+	title="https://github.com/moghtech/komodo/blob/main/config/periphery.config.toml"
+	url="https://raw.githubusercontent.com/moghtech/komodo/main/config/periphery.config.toml"
+	language="toml"
+/>
 ```
 
 ### 传递配置文件
@@ -116,24 +220,4 @@ command: periphery --config-path /path/in/container/to/periphery.config.base.tom
 
 例如，使用 `--merge-nested-config true`，您可以在基本配置中指定一个允许的 ip，在覆盖配置中指定另一个，它们都将出现在最终配置中。
 
-同样，您可以指定一个基本 docker / github 帐户对，并使用覆盖配置中的其他帐户对其进行扩展。
-
-## 配置
-
-配置也可以作为 **YAML** 或 **JSON** 传递。
-您可以使用 it-tools 将此 TOML 文件转换为您喜欢的格式：
-  - YAML: https://it-tools.tech/toml-to-yaml
-  - JSON: https://it-tools.tech/toml-to-json
-
-快速下载到 `./komodo/periphery.config.toml`:
-```bash
-wget -P komodo https://raw.githubusercontent.com/moghtech/komodo/main/config/periphery.config.toml
-```
-
-```mdx-code-block
-<RemoteCodeFile
-	title="https://github.com/moghtech/komodo/blob/main/config/periphery.config.toml"
-	url="https://raw.githubusercontent.com/moghtech/komodo/main/config/periphery.config.toml"
-	language="toml"
-/>
-```
+同样，您可以指定一个基本 Docker / GitHub 帐户对，并使用覆盖配置中的其他帐户对其进行扩展。

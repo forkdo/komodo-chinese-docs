@@ -1,12 +1,11 @@
 # 备份和还原
 
-:::info
-数据库备份和还原实际上是 [Komodo CLI](../ecosystem/cli) 的一个功能，
-为方便起见，它已打包到 Komodo Core 镜像中。
-:::
+Komodo 可以按计划自动备份其数据库，并从任何先前的快照还原。备份经过 gzip 压缩并存储在磁盘或远程服务器上，默认情况下保留最近的 14 个备份。备份和还原操作由 [Komodo CLI](../ecosystem/cli) 处理，为方便起见，它已打包到 Core 镜像中。
+
+## 计划备份
 
 从 **v1.19.0** 开始，新的 Komodo 安装将自动创建
-**备份核心数据库**[程序](../resources/procedures#procedures)，每日计划。
+**备份核心数据库**[程序](../automate/procedures#procedures)，每日计划。
 如果您没有，这是 Toml：
 
 ```toml
@@ -57,7 +56,7 @@ executions = [
 ```
 
 :::warning
-目前不支持加密，
+目前不支持内置加密，
 因此，如果您的备份解决方案本身不支持加密，您可能需要在远程备份之前加密文件。
 :::
 

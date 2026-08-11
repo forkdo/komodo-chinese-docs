@@ -4,6 +4,7 @@ Komodo CLI，即 `km`，可用于：
   - 快速 **运行执行** 并更新 **资源** 和 **变量**。
   - **重置用户密码** 并将用户提升为 **超级管理员**。
   - 执行数据库 **备份**、**恢复** 和 **复制**。
+  - 通过 Komodo Terminals **连接服务器/容器 shell**。
 
 Komodo Core 镜像附带 Komodo CLI，
 可在正在运行的容器内使用 `docker exec -it komodo-core km ...`。
@@ -21,6 +22,60 @@ Komodo Core 镜像附带 Komodo CLI，
   - `km x commit my-sync`
   - `km set user mbecks super-admin true`
   - `km set user mbecks password "temp-password"`
+  - `km ssh my-server`
+  - `km connect my-server bash -n my-session`
+  - `km exec my-container bash`
+  - `km attach my-container -s my-server`
+
+### Terminals
+
+所有终端命令共享同一个断开快捷键：按 **Alt+Q** 结束会话。
+会话本身会继续运行，并在您再次连接或从其他设备连接时保留历史记录。
+
+#### SSH / Connect
+
+`km ssh` 命令（`km connect` 的别名）在由 Komodo Periphery 管理的服务器上打开一个交互式 shell。类似于 `ssh`。
+
+```
+km ssh <server> [command] [options]
+km connect <server> [command] [options]
+```
+
+| 参数 | 描述 |
+|---|---|
+| `server` | 服务器名称（必填） |
+| `command` | 要启动的 shell 命令，例如 `bash`（可选，默认为 Periphery 默认值） |
+| `-n`, `--name` | 终端会话名称（默认：`ssh`） |
+| `-r`, `--recreate` | 强制创建新的终端，替换同名的任何现有会话 |
+
+#### Exec
+
+`km exec` 命令在正在运行的容器内打开一个交互式 shell。类似于 `docker exec`。
+
+```
+km exec <container> <shell> [options]
+```
+
+| 参数 | 描述 |
+|---|---|
+| `container` | 容器名称（必填） |
+| `shell` | 要使用的 shell，例如 `bash` 或 `sh`（必填） |
+| `-s`, `--server` | 服务器名称 —— 当多个服务器存在同名容器时为必填 |
+| `-r`, `--recreate` | 强制创建新的终端，替换现有的会话 |
+
+#### Attach
+
+`km attach` 命令附加到正在运行的容器主进程的 stdio。类似于 `docker attach`。
+
+```
+km attach <container> [options]
+```
+
+| 参数 | 描述 |
+|---|---|
+| `container` | 容器名称（必填） |
+| `-s`, `--server` | 服务器名称 —— 当多个服务器存在同名容器时为必填 |
+| `-r`, `--recreate` | 强制创建新的终端，替换现有的会话 |
 
 ### 安装
 
@@ -53,7 +108,7 @@ brew tap moghtech/komodo && \
 
 您可以为 docker run 命令设置别名：
 ```bash
-alias km='docker run --rm -v $HOME/.config/komodo:/config ghcr.io/moghtech/komodo-cli km'
+alias km='docker run --rm -v $HOME/.config/komodo:/config ghcr.io/moghtech/komodo-cli:2 km'
 km config
 ```
 

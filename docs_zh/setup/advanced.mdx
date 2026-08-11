@@ -1,22 +1,42 @@
-# 高级配置
+# 高级设置
 
-### OIDC / Oauth2
+Komodo Core 和 Periphery 的额外配置选项，包括自定义证书颁发机构、OAuth/OIDC 提供商以及挂载的配置文件。
+
+## 自定义证书颁发机构
+
+为了与私有网络上的配套服务（例如 OIDC 和 git 提供商）通信，
+**Komodo Core 和 Periphery 可能都需要信任一个或多个自定义 CA**。
+
+**从 V2 开始**，Komodo Core 和 Periphery 镜像都会在启动时自动执行 `update-ca-certificates`，
+只需将任何所需的根证书挂载到 `/usr/local/share/ca-certificates` 中：
+
+```yaml
+    volumes:
+      ## ... (不变)
+      ## 挂载自定义根 CA 证书以逐个信任
+      - /path/to/root_ca1.crt:/usr/local/share/ca-certificates/root_ca1.crt
+      - /path/to/root_ca2.crt:/usr/local/share/ca-certificates/root_ca2.crt
+      ## 或者整个文件夹也可以。
+      - /path/to/custom-certs:/usr/local/share/ca-certificates
+```
+
+## OIDC / OAuth2
 
 要启用 OAuth2 登录，您必须在相应的 OAuth 提供商上创建一个客户端，
-例如 [Github](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app)
+例如 [GitHub](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app)
 或 [Google](https://developers.google.com/identity/protocols/oauth2)。
 
-Komodo 还支持自托管的 Oauth2 提供商，如 [Authentik](https://docs.goauthentik.io/docs/providers/oauth2/)、[Gitea](https://docs.gitea.com/development/oauth2-provider) 和 [Keycloak](https://www.keycloak.org)。
+Komodo 还支持自托管的 OAuth2 提供商，如 [Authentik](https://docs.goauthentik.io/docs/providers/oauth2/)、[Gitea](https://docs.gitea.com/development/oauth2-provider) 和 [Keycloak](https://www.keycloak.org)。
 
 - Komodo 使用 `web application` 登录流程。
 - 重定向 uri 是：
-	- `<KOMODO_HOST>/auth/github/callback` (Github)
+	- `<KOMODO_HOST>/auth/github/callback` (GitHub)
 	- `<KOMODO_HOST>/auth/google/callback` (Google)
 	- `<KOMODO_HOST>/auth/oidc/callback` (OIDC)
 
 ### Authentik
 
-查看 [Authentik 官方支持文档](https://integrations.goauthentik.io/infrastructure/komodo/)。
+查看 [Authentik 集成文档](https://integrations.goauthentik.io/infrastructure/komodo/)。
 
 ### Keycloak
 - 在 Keycloak 中创建一个 [OIDC 客户端](https://www.keycloak.org/docs/latest/server_admin/index.html#proc-creating-oidc-client_server_administration_guide)。
@@ -30,8 +50,31 @@ Komodo 还支持自托管的 Oauth2 提供商，如 [Authentik](https://docs.goa
   - `KOMODO_OIDC_CLIENT_ID=...` 您指定为 `Client ID` 的内容
   - `KOMODO_OIDC_CLIENT_SECRET=...` 您从 Keycloak 复制的内容
 
+## 限制 Periphery IP
 
-### 挂载配置文件
+如果使用反向代理配合 Komodo Core，您可以限制能够连接到 Periphery 端点的 IP。例如使用 Caddy：
+
+```nginx
+(reject-ips) {
+	@externalIp not remote_ip 192.168.0.0/16 12.34.56.78/32
+	respond @externalIp 403
+}
+
+komodo.example.com {
+	handle /ws/periphery {
+		import reject-ips
+		reverse_proxy komodo-core:9120
+	}
+	handle {
+		reverse_proxy komodo-core:9120
+	}
+}
+```
+:::note
+您的反向代理应将 `X-FORWARDED-HOST` 头设置为您的 Komodo Core 域名，caddy 默认会这样做。
+:::
+
+## 挂载配置文件 {#mount-a-config-file}
 
 如果您希望将敏感信息排除在环境变量之外，您可以选择
 在您的主机上编写一个配置文件，并将其挂载到 Komodo 核心容器中的 `/config/config.toml`。

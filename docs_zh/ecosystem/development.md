@@ -10,7 +10,7 @@
     * 通过 [rustup 安装程序](https://rustup.rs/) 安装稳定的 [Rust](https://www.rust-lang.org/)
     * 本地可用的 [MongoDB](https://www.mongodb.com/) 或 [FerretDB](https://www.ferretdb.com/)。
     * 在 Debian/Ubuntu 上：需要 `apt install build-essential pkg-config libssl-dev` 来构建 rust 源代码。
-* 前端 (Web UI)
+* Web UI
     * [Node](https://nodejs.org/en) >= 18.18 + NPM
         * [Yarn](https://yarnpkg.com/) - (提示：安装 `node` 后使用 `corepack enable` 来使用 `yarn`)
     * [typeshare](https://github.com/1password/typeshare)
@@ -30,24 +30,96 @@
 
 提供了用于构建和运行 Komodo 的 [VSCode 任务](https://code.visualstudio.com/Docs/editor/tasks)。
 
-使用 devcontainer 打开存储库后，运行 `Init` 任务以构建前端/后端。然后，可以使用 `Run Komodo` 任务来运行前端/后端。还提供了用于重建/仅运行堆栈的一个组件（核心 API、外围 API、前端）的其他任务。
+使用 devcontainer 打开存储库后，运行 `Init` 任务以构建 ui/后端。然后，可以使用 `Run Komodo` 任务来运行 ui/后端。还提供了用于重建/仅运行堆栈的一个组件（核心 API、外围 API、UI）的其他任务。
 
 ## 本地
 
-要从非容器环境运行完整的 Komodo 实例，请按此顺序运行命令：
+您也可以在本地运行各个组件，仅使用 Docker 来运行数据库。
 
-* 确保依赖项是最新的
-    * `rustup update` -- 确保 rust 工具链是最新的
-* 构建并运行后端
-    * `run dev-core` -- 构建并运行核心 API
-    * `run dev-periphery` -- 构建并运行外围 API
-* 构建前端
-    * 安装 **typeshare-cli**：`cargo install typeshare-cli`
-    * **运行一次** -- `run link-client` -- 生成 TS 客户端并链接到前端
-    * 运行上述一次后：
-        * `run gen-client` -- 重建客户端
-        * `run dev-frontend` -- 以开发（监视）模式启动
-        * `run build-frontend` -- 类型检查和构建
+### 初始一次性设置
+
+创建本地配置目录。
+
+```sh
+mkdir -p .dev/keys .dev/periphery
+```
+
+添加 `.dev/core.config.toml`，内容如下：
+
+```toml
+host = "http://localhost:9120"
+private_key = "file:.dev/keys/core.key"
+local_auth = true
+enable_new_users = true
+jwt_secret = "a_random_secret"
+first_server_address = "http://localhost:8120"
+cors_allowed_origins = ["http://localhost:5173"]
+cors_allow_credentials = true
+session_allow_cross_site = true
+
+database.address = "localhost:27017"
+database.username = "komodo"
+database.password = "komodo"
+```
+
+添加 `.dev/periphery.config.toml`：
+
+```toml
+ssl_enabled = false
+root_directory = ".dev/periphery"
+```
+
+创建 `ui/.env.development`，内容如下：
+
+```
+VITE_KOMODO_HOST=http://localhost:9120
+```
+
+确保您的 Rust 工具链是最新的，并安装 CLI 工具：
+
+```sh
+rustup update
+cargo install typeshare-cli runnables-cli
+run link-client
+```
+
+### 启动服务
+
+在 Docker 中启动一个 Mongo 实例：
+
+```sh
+docker run -d --name komodo-mongo \
+-p 27017:27017 \
+-v komodo-mongo-data:/data/db \
+-v komodo-mongo-config:/data/configdb \
+-e MONGO_INITDB_ROOT_USERNAME=komodo \
+-e MONGO_INITDB_ROOT_PASSWORD=komodo \
+mongo
+```
+
+在单独的终端中，分别运行 Core、Periphery 和 UI。
+
+```sh
+run dev-core
+```
+
+```sh
+run dev-periphery
+```
+
+```sh
+run dev-ui      # 以开发（监视）模式启动
+```
+
+一切运行后，打开 `http://localhost:5173` 并创建一个用户账户。
+
+### 重建前端客户端
+
+在 API 发生变更后，使用以下命令重建客户端：
+
+```bash
+run gen-client  # 在 API 变更后重建客户端（after API changes）
+```
 
 ## 文档站点开发
 

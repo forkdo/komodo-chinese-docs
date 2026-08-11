@@ -1,16 +1,16 @@
 # MongoDB
 
-[**MongoDB**](https://www.mongodb.com) 是 Komodo 推荐的数据库。它存储所有资源配置、用户账户、审计日志和系统状态。Komodo Core 直接使用 MongoDB 驱动程序与其通信。
+[**MongoDB**](https://www.mongodb.com) is the recommended database for Komodo. It stores all resource configuration, user accounts, audit logs, and system state. Komodo Core communicates with it directly using the MongoDB driver.
 
-## 快速开始
+## Quick Start
 
-1. 将 `komodo/mongo.compose.yaml` 和 `komodo/compose.env` 复制到您的主机：
+1. Copy `komodo/mongo.compose.yaml` and `komodo/compose.env` to your host:
 ```bash
 wget -P komodo https://raw.githubusercontent.com/moghtech/komodo/main/compose/mongo.compose.yaml && \
   wget -P komodo https://raw.githubusercontent.com/moghtech/komodo/main/compose/compose.env
 ```
-2. 编辑 `komodo/compose.env` 中的变量。
-3. 使用命令部署：
+2. Edit the variables in `komodo/compose.env`.
+3. Deploy using command:
 
 ```bash
 docker compose -p komodo -f komodo/mongo.compose.yaml --env-file komodo/compose.env up -d

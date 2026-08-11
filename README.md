@@ -4,76 +4,85 @@
 
 ## 项目流程
 
-### 1. 拉取上游文档
+### 首次使用
 1. 创建空分支
 ```bash
 git switch --orphan docs
 ```
 
-2. 创建 `README.md`
+2. 首次提交
 ```bash
-cat > README.md <<EOF
-# 中文文档
-
-本文档使用 AI 翻译
-EOF
-```
-
-3. 首次提交
-```bash
-git add .
+git add README.md
 git commit -am init
 git push origin docs
 ```
 
-4. 设置上游仓库
+3. 拉取上游源码
 ```bash
-# GitHub fork Codespaces 方式已自动设置
-git remote add upstream https://github.com/moghtech/komodo.git
+mkdir -p docsite
+pushd docsite
+if [[ -d .git ]]; then
+    git remote set-url upstream https://github.com/moghtech/komodo.git
+else
+    git init
+    git remote add upstream https://github.com/moghtech/komodo.git
+fi
+git reset --hard
 git fetch upstream main
-git checkout upstream/main -- docsite
-git checkout upstream/main -- docsite/docs
+git merge upstream/main
+git rev-parse --short HEAD > ../commit.txt
+popd
 ```
 
-5. 更新配置信息
+4. 复制源文档
 ```bash
-# sed -i 's#"en"#"zh-Hans"#g' docsite/docusaurus.config.ts
+rm -rf docs
+cp -r docsite/docs .
+# cp -r docsite/content .
+# mv content docs    
 ```
 
-### 2. 安装 AI 助手
-1. 安装 CLI 工具
+5. 全量翻译
 ```bash
-# npm install -g npm
-npm install -g @google/gemini-cli
+aitr
 ```
 
-2. 设置环境变量
+6. 本地测试与构建
 ```bash
-# 通过环境变量方式设置
-export GEMINI_API_KEY=
-
-# 通过 .env 文件配置
-echo 'GEMINI_API_KEY=' > .env
-```
-
-3. AI 翻译
-```bash
-将 @docsite/docs 里面的所有英文文档翻译成中文，并且保存至根目录的 @docs_zh 文件夹里。
-```
-
-```bash
-gemini --yolo --model "gemini-2.5-flash-lite" "将 @docsite/docs 里面的所有英文文档翻译成中文，并且保存至 根目录的@docs_zh 文件夹里。"
-```
-
-```bash
-gemini --yolo --model "gemini-2.5-flash-lite" "推理过程使用中文输出。将 @docsite/docs 里面的所有英文文档翻译成中文，并且保存至根目录的 @docs_zh 文件夹里。"
-```
-
-## 文档管理器
-- [Docusaurus](https://docusaurus.io/zh-CN/) （已内置）
-```bash
-cp -r docs_zh/* docsite/docs/
+git clone https://github.com/moghtech/komodo.git docsite
+cp -r docs_zh/* ./docsite/docs
 cd docsite
+```
+
+8. 启动或构建
+```bash
+# NodeJS
 yarn
-yarn build
+yarn start
+
+...
+```
+
+### 2. AI 翻译
+- 安装 [**CLI**](https://git.jetsung.com/jetsung/ai-translator) 工具 （增量更新直接使用 AI CLI 工具直接对比）
+```bash
+curl -L https://fx4.cn/aitr | bash
+```
+
+1. 设置环境变量 [`config.toml`](config.example.toml)
+```bash
+...
+[[providers]]
+enabled = true
+name = "grok"
+api_key = "xxx"
+base_url = "https://api.x.ai/v1"
+model = "grok-3"
+concurrency = 1 # 线程数
+rate_delay = 3.0 # 每个请求后等待 1.0 秒（可根据限流调整）
+```
+
+2. AI 翻译
+```bash
+aitr
 ```
